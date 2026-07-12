@@ -265,12 +265,19 @@ Deno.serve(async (req) => {
       });
     }
 
-    // Load known data from Lead (if exists) to avoid re-asking
+    // Load known data from Contact and Lead (if exists) to avoid re-asking
+    const currentContact = await base44.asServiceRole.entities.Contact.get(contactId);
     const existingLeads = await base44.asServiceRole.entities.Lead.filter({
       organization_id, contact_id: contactId
     });
     const lead = existingLeads.length > 0 ? existingLeads[0] : null;
     const knownData = {};
+    // Identity from Contact (skip placeholder test phone/name)
+    if (currentContact) {
+      if (currentContact.name && !currentContact.name.startsWith('Prueba ')) knownData['Nombre'] = currentContact.name;
+      if (currentContact.phone && currentContact.phone !== '0000000000') knownData['Teléfono'] = currentContact.phone;
+      if (currentContact.email) knownData['Email'] = currentContact.email;
+    }
     if (lead) {
       if (lead.service_interest) knownData['Servicio de interés'] = lead.service_interest;
       if (lead.budget) knownData['Presupuesto'] = lead.budget;
@@ -371,10 +378,10 @@ Deno.serve(async (req) => {
       });
     }
 
-    // Handle request_human or low confidence
+    // Handle request_human or low confidence (handoff is persistent: only false→true, never back to false)
     let finalReply = llmResponse.reply;
-    if (llmResponse.action.type === 'request_human' || llmResponse.confidence < 0.4) {
-      await base44.asServiceRole.entities.Conversation.update(activeConversationId, { human_handoff_required: true });
+    const handoffTriggered = llmResponse.action.type === 'request_human' || llmResponse.confidence < 0.4;
+    if (handoffTriggered) {
       if (employee.handoff_message) {
         finalReply = employee.handoff_message;
       }
@@ -421,6 +428,16 @@ Deno.serve(async (req) => {
       }
     }
 
+    // Persist contact identity from lead_data (only non-null values; Contact is source of truth)
+    const identityData = llmResponse.lead_data || {};
+    const contactUpdate = {};
+    if (identityData.name) contactUpdate.name = identityData.name;
+    if (identityData.phone) contactUpdate.phone = identityData.phone;
+    if (identityData.email) contactUpdate.email = identityData.email;
+    if (Object.keys(contactUpdate).length > 0) {
+      await base44.asServiceRole.entities.Contact.update(contactId, contactUpdate);
+    }
+
     // Handle request_appointment
     if (llmResponse.action.type === 'request_appointment') {
       await base44.asServiceRole.entities.ActionEvent.create({
@@ -441,12 +458,15 @@ Deno.serve(async (req) => {
       content: finalReply
     });
 
-    // Update conversation
-    await base44.asServiceRole.entities.Conversation.update(activeConversationId, {
+    // Update conversation (handoff is persistent: only set to true, never back to false)
+    const convUpdate = {
       last_message_at: now.toISOString(),
-      summary: llmResponse.conversation_summary,
-      human_handoff_required: llmResponse.action.type === 'request_human' || llmResponse.confidence < 0.4
-    });
+      summary: llmResponse.conversation_summary
+    };
+    if (handoffTriggered) {
+      convUpdate.human_handoff_required = true;
+    }
+    await base44.asServiceRole.entities.Conversation.update(activeConversationId, convUpdate);
 
     // 7. Increment message usage
     const newMsgUsage = (org.current_message_usage || 0) + 1;
