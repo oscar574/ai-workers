@@ -21,6 +21,7 @@ export default function Settings() {
   const [form, setForm] = useState({});
   const [saving, setSaving] = useState(false);
   const [saved, setSaved] = useState(false);
+  const [error, setError] = useState('');
 
   useEffect(() => {
     if (effectiveOrg) {
@@ -36,12 +37,15 @@ export default function Settings() {
   const handleSave = async () => {
     setSaving(true);
     setSaved(false);
+    setError('');
     try {
-      await base44.entities.Organization.update(effectiveOrg.id, form);
+      await base44.functions.invoke('update-organization-settings', form);
       setSaved(true);
       reload();
       setTimeout(() => setSaved(false), 3000);
-    } catch (e) { console.error(e); } finally { setSaving(false); }
+    } catch (e) {
+      setError(e.response?.data?.error || e.message || 'Error al guardar');
+    } finally { setSaving(false); }
   };
 
   if (!effectiveOrg) return null;
@@ -85,6 +89,7 @@ export default function Settings() {
           <Save className="w-4 h-4 mr-1.5" /> {saving ? 'Guardando...' : 'Guardar cambios'}
         </Button>
         {saved && <span className="text-sm text-green-600">✓ Cambios guardados</span>}
+        {error && <span className="text-sm text-red-600">{error}</span>}
       </div>
     </div>
   );

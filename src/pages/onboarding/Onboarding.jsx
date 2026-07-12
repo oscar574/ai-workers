@@ -115,14 +115,14 @@ export default function Onboarding() {
 
   const saveStep1 = async () => {
     setSaving(true);
-    try { await base44.entities.Organization.update(effectiveOrg.id, { ...orgForm, onboarding_step: 2 }); setStep(2); }
+    try { await base44.functions.invoke('update-organization-settings', { ...orgForm, onboarding_step: 2 }); setStep(2); }
     finally { setSaving(false); }
   };
   const saveStep2 = async (tmpl) => {
     setSaving(true);
     try {
       setSelectedTemplate(tmpl); prefillFromTemplate(tmpl);
-      await base44.entities.Organization.update(effectiveOrg.id, { selected_template_id: tmpl.id, onboarding_step: 3 });
+      await base44.functions.invoke('update-organization-settings', { selected_template_id: tmpl.id, onboarding_step: 3 });
       setStep(3);
     } finally { setSaving(false); }
   };
@@ -131,7 +131,7 @@ export default function Onboarding() {
     try {
       if (employee) { await base44.entities.AIEmployee.update(employee.id, { ...empForm }); }
       else { const created = await base44.entities.AIEmployee.create({ ...empForm, organization_id: effectiveOrg.id, status: 'draft', prohibited_topics: selectedTemplate?.prohibited_topics || [] }); setEmployee(created); }
-      await base44.entities.Organization.update(effectiveOrg.id, { onboarding_step: 4 });
+      await base44.functions.invoke('update-organization-settings', { onboarding_step: 4 });
       setStep(4);
     } finally { setSaving(false); }
   };
@@ -153,12 +153,12 @@ export default function Onboarding() {
           escalate_situations: (qualForm.escalate_situations || '').split('\n').map(s => s.trim()).filter(Boolean)
         }
       });
-      await base44.entities.Organization.update(effectiveOrg.id, { onboarding_step: 6 });
+      await base44.functions.invoke('update-organization-settings', { onboarding_step: 6 });
       setStep(6);
     } finally { setSaving(false); }
   };
   const finish = async () => {
-    await base44.entities.Organization.update(effectiveOrg.id, { onboarding_step: null });
+    await base44.functions.invoke('update-organization-settings', { onboarding_step: null });
     reload();
     window.location.href = '/app';
   };
@@ -297,7 +297,7 @@ export default function Onboarding() {
                 ))}
               </div>
             </div>
-            <div className="flex justify-between"><Button variant="outline" onClick={() => setStep(3)}><ArrowLeft className="w-4 h-4 mr-1.5" /> Atrás</Button><Button onClick={() => { base44.entities.Organization.update(effectiveOrg.id, { onboarding_step: 5 }); setStep(5); }} className="bg-slate-900 hover:bg-slate-800">Continuar <ArrowRight className="w-4 h-4 ml-1.5" /></Button></div>
+            <div className="flex justify-between"><Button variant="outline" onClick={() => setStep(3)}><ArrowLeft className="w-4 h-4 mr-1.5" /> Atrás</Button><Button onClick={async () => { await base44.functions.invoke('update-organization-settings', { onboarding_step: 5 }); setStep(5); }} className="bg-slate-900 hover:bg-slate-800">Continuar <ArrowRight className="w-4 h-4 ml-1.5" /></Button></div>
           </div>
         )}
 

@@ -28,6 +28,7 @@ export default function Team() {
   const [inviteLink, setInviteLink] = useState('');
   const [copied, setCopied] = useState(false);
   const [inviting, setInviting] = useState(false);
+  const [inviteError, setInviteError] = useState('');
 
   const load = async () => {
     if (!effectiveOrg) return;
@@ -45,47 +46,26 @@ export default function Team() {
   const handleInvite = async () => {
     if (!inviteEmail) return;
     setInviting(true);
+    setInviteError('');
     try {
-      const token = crypto.randomUUID();
-      const expiresAt = new Date();
-      expiresAt.setDate(expiresAt.getDate() + 7);
-      await base44.entities.Invitation.create({
-        organization_id: effectiveOrg.id,
-        organization_name: effectiveOrg.name,
-        email: inviteEmail,
-        role: inviteRole,
-        token,
-        status: 'pending',
-        invited_by_user_id: user?.id,
-        invited_by_name: user?.email,
-        expires_at: expiresAt.toISOString()
-      });
-      const link = `${window.location.origin}/accept-invitation?token=${token}`;
-      setInviteLink(link);
-      try {
-        await base44.integrations.Core.SendEmail({
-          to: inviteEmail,
-          subject: `Invitación a ${effectiveOrg.name}`,
-          body: `Has sido invitado a unirte a ${effectiveOrg.name} en AI Workers como ${roleLabels[inviteRole]}.\n\nHaz clic en el siguiente enlace para aceptar:\n${link}\n\nEl enlace expira en 7 días.`
-        });
-      } catch (e) { console.error('Email failed:', e); }
-      await base44.entities.AuditLog.create({
-        organization_id: effectiveOrg.id, user_id: user?.id, user_email: user?.email,
-        action: 'invitation_created', entity_type: 'Invitation', entity_id: token,
-        details: { email: inviteEmail, role: inviteRole }
-      });
+      const res = await base44.functions.invoke('create-invitation', { email: inviteEmail, role: inviteRole });
+      setInviteLink(res.data.link);
       load();
-    } catch (e) { console.error(e); } finally { setInviting(false); }
+    } catch (e) {
+      setInviteError(e.response?.data?.error || e.message || 'Error al crear invitación');
+    } finally { setInviting(false); }
   };
 
   const handleDeactivate = async (member) => {
     if (!confirm(`¿Desactivar a ${member.user_name || member.user_email}?`)) return;
     await base44.entities.OrganizationUser.update(member.id, { status: 'inactive' });
-    await base44.entities.AuditLog.create({
-      organization_id: effectiveOrg.id, user_id: user?.id, user_email: user?.email,
-      action: 'user_deactivated', entity_type: 'OrganizationUser', entity_id: member.id,
-      details: { email: member.user_email }
-    });
+    try {
+      await base44.functions.invoke('save-audit-log', {
+        organization_id: effectiveOrg.id,
+        action: 'user_deactivated', entity_type: 'OrganizationUser', entity_id: member.id,
+        details: { email: member.user_email }
+      });
+    } catch (e) { console.error(e); }
     load();
   };
 
@@ -104,7 +84,7 @@ export default function Team() {
           <h1 className="text-2xl font-bold text-slate-900">Equipo</h1>
           <p className="text-sm text-slate-500 mt-1">{members.filter(m => m.status === 'active').length} miembros activos</p>
         </div>
-        <Button onClick={() => { setShowInvite(true); setInviteLink(''); setInviteEmail(''); }} className="bg-slate-900 hover:bg-slate-800">
+        <Button onClick={() => { setShowInvite(true); setInviteLink(''); setInviteEmail(''); setInviteError(''); }} className="bg-slate-900 hover:bg-slate-800">
           <UserPlus className="w-4 h-4 mr-1.5" /> Invitar
         </Button>
       </div>
@@ -196,6 +176,7 @@ export default function Team() {
                   </SelectContent>
                 </Select>
               </div>
+              {inviteError && <p className="text-sm text-red-600">{inviteError}</p>}
               <DialogFooter>
                 <Button variant="outline" onClick={() => setShowInvite(false)}>Cancelar</Button>
                 <Button onClick={handleInvite} disabled={inviting || !inviteEmail} className="bg-slate-900 hover:bg-slate-800">{inviting ? 'Enviando...' : 'Enviar invitación'}</Button>
