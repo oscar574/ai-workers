@@ -1,7 +1,7 @@
 import { createClientFromRequest } from 'npm:@base44/sdk@0.8.38';
 
-const ALLOWED_FIELDS = ['name', 'website', 'phone', 'city', 'timezone', 'logo_url', 'primary_color', 'onboarding_step', 'selected_template_id'];
-const BUSINESS_FIELDS = ['name', 'website', 'phone', 'city', 'timezone', 'logo_url', 'primary_color'];
+const ALLOWED_FIELDS = ['name', 'industry', 'website', 'phone', 'city', 'timezone', 'logo_url', 'primary_color', 'onboarding_step', 'selected_template_id'];
+const BUSINESS_FIELDS = ['name', 'industry', 'website', 'phone', 'city', 'timezone', 'logo_url', 'primary_color'];
 
 Deno.serve(async (req) => {
   try {

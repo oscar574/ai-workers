@@ -46,6 +46,18 @@ export const OrgProvider = ({ children }) => {
     setImpersonatedOrg(null);
   }, []);
 
+  const reload = useCallback(async () => {
+    await loadContext();
+    if (impersonatedOrg) {
+      try {
+        const freshOrg = await base44.entities.Organization.get(impersonatedOrg.id);
+        setImpersonatedOrg(freshOrg);
+      } catch (error) {
+        console.error('Error al refrescar organización impersonada:', error);
+      }
+    }
+  }, [impersonatedOrg, loadContext]);
+
   const isSuperAdmin = context?.is_super_admin || false;
   const isImpersonating = !!impersonatedOrg;
   const effectiveOrg = impersonatedOrg || context?.organization || null;
@@ -57,7 +69,7 @@ export const OrgProvider = ({ children }) => {
       user: context?.user || user,
       context,
       loading,
-      reload: loadContext,
+      reload,
       isSuperAdmin,
       isImpersonating,
       effectiveOrg,
