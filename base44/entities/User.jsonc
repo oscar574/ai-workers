@@ -1,0 +1,32 @@
+{
+  "name": "User",
+  "type": "object",
+  "properties": {
+    "role": {
+      "type": "string",
+      "description": "Rol del usuario en la plataforma",
+      "enum": [
+        "super_admin",
+        "admin",
+        "user"
+      ],
+      "default": "user"
+    },
+    "organization_id": {
+      "type": "string",
+      "description": "Organizaci\u00f3n a la que pertenece el usuario"
+    },
+    "organization_role": {
+      "type": "string",
+      "description": "Rol del usuario dentro de su organizaci\u00f3n",
+      "enum": [
+        "organization_admin",
+        "agent",
+        "viewer"
+      ]
+    }
+  },
+  "required": [
+    "role"
+  ]
+}

@@ -1,0 +1,126 @@
+{
+  "name": "AIEmployee",
+  "type": "object",
+  "properties": {
+    "organization_id": {
+      "type": "string"
+    },
+    "name": {
+      "type": "string"
+    },
+    "role": {
+      "type": "string"
+    },
+    "status": {
+      "type": "string",
+      "enum": [
+        "draft",
+        "active",
+        "paused"
+      ],
+      "default": "draft"
+    },
+    "tone": {
+      "type": "string"
+    },
+    "language": {
+      "type": "string"
+    },
+    "business_hours": {
+      "type": "object"
+    },
+    "system_instructions": {
+      "type": "string"
+    },
+    "welcome_message": {
+      "type": "string"
+    },
+    "fallback_message": {
+      "type": "string"
+    },
+    "handoff_message": {
+      "type": "string"
+    },
+    "primary_goal": {
+      "type": "string"
+    },
+    "qualification_rules": {
+      "type": "object"
+    },
+    "prohibited_topics": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      }
+    },
+    "human_contact_name": {
+      "type": "string"
+    },
+    "human_contact_phone": {
+      "type": "string"
+    },
+    "response_length": {
+      "type": "string",
+      "enum": [
+        "short",
+        "medium",
+        "long"
+      ],
+      "default": "medium"
+    }
+  },
+  "required": [
+    "organization_id",
+    "name"
+  ],
+  "rls": {
+    "create": {
+      "$or": [
+        {
+          "data.organization_id": "{{user.data.organization_id}}"
+        },
+        {
+          "user_condition": {
+            "role": "super_admin"
+          }
+        }
+      ]
+    },
+    "read": {
+      "$or": [
+        {
+          "data.organization_id": "{{user.data.organization_id}}"
+        },
+        {
+          "user_condition": {
+            "role": "super_admin"
+          }
+        }
+      ]
+    },
+    "update": {
+      "$or": [
+        {
+          "data.organization_id": "{{user.data.organization_id}}"
+        },
+        {
+          "user_condition": {
+            "role": "super_admin"
+          }
+        }
+      ]
+    },
+    "delete": {
+      "$or": [
+        {
+          "data.organization_id": "{{user.data.organization_id}}"
+        },
+        {
+          "user_condition": {
+            "role": "super_admin"
+          }
+        }
+      ]
+    }
+  }
+}

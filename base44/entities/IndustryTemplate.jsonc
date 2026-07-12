@@ -1,0 +1,74 @@
+{
+  "name": "IndustryTemplate",
+  "type": "object",
+  "properties": {
+    "name": {
+      "type": "string"
+    },
+    "industry": {
+      "type": "string"
+    },
+    "description": {
+      "type": "string"
+    },
+    "default_employee_name": {
+      "type": "string"
+    },
+    "default_role": {
+      "type": "string"
+    },
+    "default_tone": {
+      "type": "string"
+    },
+    "primary_goal": {
+      "type": "string"
+    },
+    "default_system_instructions": {
+      "type": "string"
+    },
+    "qualification_questions": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      }
+    },
+    "prohibited_topics": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      }
+    },
+    "recommended_actions": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      }
+    },
+    "active": {
+      "type": "boolean",
+      "default": true
+    }
+  },
+  "required": [
+    "name",
+    "industry"
+  ],
+  "rls": {
+    "create": {
+      "user_condition": {
+        "role": "super_admin"
+      }
+    },
+    "read": true,
+    "update": {
+      "user_condition": {
+        "role": "super_admin"
+      }
+    },
+    "delete": {
+      "user_condition": {
+        "role": "super_admin"
+      }
+    }
+  }
+}

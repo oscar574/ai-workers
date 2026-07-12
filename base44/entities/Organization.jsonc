@@ -1,0 +1,111 @@
+{
+  "name": "Organization",
+  "type": "object",
+  "properties": {
+    "name": {
+      "type": "string"
+    },
+    "slug": {
+      "type": "string"
+    },
+    "industry": {
+      "type": "string"
+    },
+    "website": {
+      "type": "string"
+    },
+    "phone": {
+      "type": "string"
+    },
+    "city": {
+      "type": "string"
+    },
+    "logo_url": {
+      "type": "string"
+    },
+    "primary_color": {
+      "type": "string"
+    },
+    "timezone": {
+      "type": "string"
+    },
+    "status": {
+      "type": "string",
+      "enum": [
+        "active",
+        "suspended"
+      ],
+      "default": "active"
+    },
+    "plan_id": {
+      "type": "string"
+    },
+    "monthly_conversation_limit": {
+      "type": "number"
+    },
+    "monthly_message_limit": {
+      "type": "number"
+    },
+    "current_conversation_usage": {
+      "type": "number",
+      "default": 0
+    },
+    "current_message_usage": {
+      "type": "number",
+      "default": 0
+    },
+    "usage_period_start": {
+      "type": "string",
+      "format": "date"
+    },
+    "owner_user_id": {
+      "type": "string"
+    },
+    "onboarding_step": {
+      "type": "number"
+    },
+    "selected_template_id": {
+      "type": "string"
+    }
+  },
+  "required": [
+    "name",
+    "slug"
+  ],
+  "rls": {
+    "create": {
+      "user_condition": {
+        "role": "super_admin"
+      }
+    },
+    "read": {
+      "$or": [
+        {
+          "data.id": "{{user.data.organization_id}}"
+        },
+        {
+          "user_condition": {
+            "role": "super_admin"
+          }
+        }
+      ]
+    },
+    "update": {
+      "$or": [
+        {
+          "data.id": "{{user.data.organization_id}}"
+        },
+        {
+          "user_condition": {
+            "role": "super_admin"
+          }
+        }
+      ]
+    },
+    "delete": {
+      "user_condition": {
+        "role": "super_admin"
+      }
+    }
+  }
+}

@@ -1,0 +1,106 @@
+{
+  "name": "Lead",
+  "type": "object",
+  "properties": {
+    "organization_id": {
+      "type": "string"
+    },
+    "contact_id": {
+      "type": "string"
+    },
+    "ai_employee_id": {
+      "type": "string"
+    },
+    "intent": {
+      "type": "string"
+    },
+    "qualification_status": {
+      "type": "string",
+      "enum": [
+        "unqualified",
+        "in_progress",
+        "qualified"
+      ],
+      "default": "unqualified"
+    },
+    "score": {
+      "type": "number",
+      "default": 0
+    },
+    "budget": {
+      "type": "string"
+    },
+    "service_interest": {
+      "type": "string"
+    },
+    "location": {
+      "type": "string"
+    },
+    "desired_date": {
+      "type": "string"
+    },
+    "summary": {
+      "type": "string"
+    },
+    "next_action": {
+      "type": "string"
+    },
+    "assigned_to": {
+      "type": "string"
+    }
+  },
+  "required": [
+    "organization_id",
+    "contact_id"
+  ],
+  "rls": {
+    "create": {
+      "$or": [
+        {
+          "data.organization_id": "{{user.data.organization_id}}"
+        },
+        {
+          "user_condition": {
+            "role": "super_admin"
+          }
+        }
+      ]
+    },
+    "read": {
+      "$or": [
+        {
+          "data.organization_id": "{{user.data.organization_id}}"
+        },
+        {
+          "user_condition": {
+            "role": "super_admin"
+          }
+        }
+      ]
+    },
+    "update": {
+      "$or": [
+        {
+          "data.organization_id": "{{user.data.organization_id}}"
+        },
+        {
+          "user_condition": {
+            "role": "super_admin"
+          }
+        }
+      ]
+    },
+    "delete": {
+      "$or": [
+        {
+          "data.organization_id": "{{user.data.organization_id}}"
+        },
+        {
+          "user_condition": {
+            "role": "super_admin"
+          }
+        }
+      ]
+    }
+  }
+}
