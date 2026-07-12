@@ -7,7 +7,8 @@ import { Badge } from '@/components/ui/badge';
 import { Send, RotateCcw, Zap, User, Bot, AlertTriangle, Loader2 } from 'lucide-react';
 
 export default function TestChat() {
-  const { effectiveOrg } = useOrg();
+  const { effectiveOrg, isImpersonating } = useOrg();
+  const orgPayload = isImpersonating && effectiveOrg ? { organization_id: effectiveOrg.id } : {};
   const [messages, setMessages] = useState([]);
   const [input, setInput] = useState('');
   const [conversationId, setConversationId] = useState(null);
@@ -35,7 +36,7 @@ export default function TestChat() {
       setKnowledgeCount(kn.length);
 
       // Init conversation — get welcome message
-      const res = await base44.functions.invoke('chat-message', {});
+      const res = await base44.functions.invoke('chat-message', { ...orgPayload });
       if (res.data.limit_reached) {
         setLimitReached(true);
         setMessages([{ role: 'assistant', content: res.data.reply }]);
@@ -66,7 +67,8 @@ export default function TestChat() {
     try {
       const res = await base44.functions.invoke('chat-message', {
         message_text: text,
-        conversation_id: conversationId
+        conversation_id: conversationId,
+        ...orgPayload
       });
       const d = res.data;
       if (d.limit_reached) {
@@ -101,7 +103,8 @@ export default function TestChat() {
     try {
       const res = await base44.functions.invoke('chat-message', {
         restart: true,
-        conversation_id: conversationId
+        conversation_id: conversationId,
+        ...orgPayload
       });
       if (res.data.limit_reached) {
         setLimitReached(true);

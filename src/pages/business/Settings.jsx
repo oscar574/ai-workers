@@ -17,7 +17,8 @@ const INDUSTRIES = [
 ];
 
 export default function Settings() {
-  const { effectiveOrg, reload } = useOrg();
+  const { effectiveOrg, reload, isImpersonating } = useOrg();
+  const orgPayload = isImpersonating && effectiveOrg ? { organization_id: effectiveOrg.id } : {};
   const [form, setForm] = useState({});
   const [saving, setSaving] = useState(false);
   const [saved, setSaved] = useState(false);
@@ -39,7 +40,7 @@ export default function Settings() {
     setSaved(false);
     setError('');
     try {
-      await base44.functions.invoke('update-organization-settings', form);
+      await base44.functions.invoke('update-organization-settings', { ...form, ...orgPayload });
       setSaved(true);
       reload();
       setTimeout(() => setSaved(false), 3000);

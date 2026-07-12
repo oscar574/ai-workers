@@ -11,15 +11,25 @@ Deno.serve(async (req) => {
 
     const body = await req.json();
 
-    // Verify user is an active organization_admin and get THEIR org_id from membership
-    const orgUsers = await base44.asServiceRole.entities.OrganizationUser.filter({
-      user_id: user.id, status: 'active'
-    });
-    const adminMembership = orgUsers.find(ou => ou.role === 'organization_admin');
-    if (!adminMembership) {
-      return Response.json({ error: 'No tienes permisos para editar esta organización' }, { status: 403 });
+    // Super_admin may target any org via organization_id; everyone else must be an active organization_admin of their own membership
+    const SUPER_ADMIN_EMAIL = 'oscar@yong.mx';
+    const isSuperAdmin = user.email === SUPER_ADMIN_EMAIL || user.role === 'super_admin' || user.role === 'admin';
+    let organization_id;
+    if (isSuperAdmin && body.organization_id) {
+      let targetOrg;
+      try { targetOrg = await base44.asServiceRole.entities.Organization.get(body.organization_id); } catch (e) {}
+      if (!targetOrg) return Response.json({ error: 'Organización no encontrada' }, { status: 404 });
+      organization_id = body.organization_id;
+    } else {
+      const orgUsers = await base44.asServiceRole.entities.OrganizationUser.filter({
+        user_id: user.id, status: 'active'
+      });
+      const adminMembership = orgUsers.find(ou => ou.role === 'organization_admin');
+      if (!adminMembership) {
+        return Response.json({ error: 'No tienes permisos para editar esta organización' }, { status: 403 });
+      }
+      organization_id = adminMembership.organization_id;
     }
-    const organization_id = adminMembership.organization_id;
 
     // Filter to only allowed fields (whitelist) — ignores plan_id, limits, counters, status, etc.
     const filteredUpdates = {};

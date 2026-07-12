@@ -9,21 +9,31 @@ Deno.serve(async (req) => {
     if (!user) return Response.json({ error: 'Unauthorized' }, { status: 401 });
 
     const body = await req.json();
-    const { email, role } = body;
+    const { email, role, organization_id: requestedOrgId } = body;
     if (!email || !role) return Response.json({ error: 'Email y rol son obligatorios' }, { status: 400 });
     if (!['organization_admin', 'agent', 'viewer'].includes(role)) {
       return Response.json({ error: 'Rol inválido' }, { status: 400 });
     }
 
-    // Verify user is an active organization_admin using THEIR membership (not client-sent org)
-    const orgUsers = await base44.asServiceRole.entities.OrganizationUser.filter({
-      user_id: user.id, status: 'active'
-    });
-    const adminMembership = orgUsers.find(ou => ou.role === 'organization_admin');
-    if (!adminMembership) {
-      return Response.json({ error: 'No tienes permisos para invitar usuarios' }, { status: 403 });
+    // Super_admin may target any org via organization_id; everyone else must be an active organization_admin of their own membership
+    const SUPER_ADMIN_EMAIL = 'oscar@yong.mx';
+    const isSuperAdmin = user.email === SUPER_ADMIN_EMAIL || user.role === 'super_admin' || user.role === 'admin';
+    let organization_id;
+    if (isSuperAdmin && requestedOrgId) {
+      let targetOrg;
+      try { targetOrg = await base44.asServiceRole.entities.Organization.get(requestedOrgId); } catch (e) {}
+      if (!targetOrg) return Response.json({ error: 'Organización no encontrada' }, { status: 404 });
+      organization_id = requestedOrgId;
+    } else {
+      const orgUsers = await base44.asServiceRole.entities.OrganizationUser.filter({
+        user_id: user.id, status: 'active'
+      });
+      const adminMembership = orgUsers.find(ou => ou.role === 'organization_admin');
+      if (!adminMembership) {
+        return Response.json({ error: 'No tienes permisos para invitar usuarios' }, { status: 403 });
+      }
+      organization_id = adminMembership.organization_id;
     }
-    const organization_id = adminMembership.organization_id;
 
     // Check if email already has active membership in this org
     const existingMembers = await base44.asServiceRole.entities.OrganizationUser.filter({

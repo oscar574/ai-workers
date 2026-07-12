@@ -17,7 +17,8 @@ const roleLabels = {
 };
 
 export default function Team() {
-  const { effectiveOrg, user } = useOrg();
+  const { effectiveOrg, user, isImpersonating } = useOrg();
+  const orgPayload = isImpersonating && effectiveOrg ? { organization_id: effectiveOrg.id } : {};
   const navigate = useNavigate();
   const [members, setMembers] = useState([]);
   const [invitations, setInvitations] = useState([]);
@@ -48,7 +49,7 @@ export default function Team() {
     setInviting(true);
     setInviteError('');
     try {
-      const res = await base44.functions.invoke('create-invitation', { email: inviteEmail, role: inviteRole });
+      const res = await base44.functions.invoke('create-invitation', { email: inviteEmail, role: inviteRole, ...orgPayload });
       setInviteLink(res.data.link);
       load();
     } catch (e) {

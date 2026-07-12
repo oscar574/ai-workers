@@ -129,16 +129,26 @@ Deno.serve(async (req) => {
     if (!user) return Response.json({ error: 'Unauthorized' }, { status: 401 });
 
     const body = await req.json();
-    const { message_text, conversation_id, restart } = body;
+    const { message_text, conversation_id, restart, organization_id: requestedOrgId } = body;
 
-    // 1. Identify org via OrganizationUser membership (service role, NOT client data)
-    const orgUsers = await base44.asServiceRole.entities.OrganizationUser.filter({
-      user_id: user.id, status: 'active'
-    });
-    if (orgUsers.length === 0) {
-      return Response.json({ error: 'No perteneces a ninguna organización' }, { status: 403 });
+    // 1. Identify org: super_admin may target any org via organization_id; everyone else uses their own membership
+    const SUPER_ADMIN_EMAIL = 'oscar@yong.mx';
+    const isSuperAdmin = user.email === SUPER_ADMIN_EMAIL || user.role === 'super_admin' || user.role === 'admin';
+    let organization_id;
+    if (isSuperAdmin && requestedOrgId) {
+      let targetOrg;
+      try { targetOrg = await base44.asServiceRole.entities.Organization.get(requestedOrgId); } catch (e) {}
+      if (!targetOrg) return Response.json({ error: 'Organización no encontrada' }, { status: 404 });
+      organization_id = requestedOrgId;
+    } else {
+      const orgUsers = await base44.asServiceRole.entities.OrganizationUser.filter({
+        user_id: user.id, status: 'active'
+      });
+      if (orgUsers.length === 0) {
+        return Response.json({ error: 'No perteneces a ninguna organización' }, { status: 403 });
+      }
+      organization_id = orgUsers[0].organization_id;
     }
-    const organization_id = orgUsers[0].organization_id;
 
     const org = await base44.asServiceRole.entities.Organization.get(organization_id);
 
