@@ -9,12 +9,18 @@ Deno.serve(async (req) => {
     if (!user) return Response.json({ error: 'Unauthorized' }, { status: 401 });
 
     // Auto-promote bootstrap super admin
-    if (user.email === SUPER_ADMIN_EMAIL && user.role !== 'super_admin') {
-      await base44.asServiceRole.entities.User.update(user.id, { role: 'super_admin' });
-      user.role = 'super_admin';
+    const isBootstrapEmail = user.email === SUPER_ADMIN_EMAIL;
+    if (isBootstrapEmail && user.role !== 'super_admin') {
+      try {
+        await base44.asServiceRole.entities.User.update(user.id, { role: 'super_admin' });
+        user.role = 'super_admin';
+      } catch (e) {
+        // Can't update role (e.g., app owner has 'admin' role which is locked)
+        // Treat as super_admin anyway
+      }
     }
 
-    if (user.role === 'super_admin') {
+    if (isBootstrapEmail || user.role === 'super_admin' || user.role === 'admin') {
       return Response.json({
         user: { id: user.id, email: user.email, full_name: user.full_name, role: 'super_admin' },
         organization: null,

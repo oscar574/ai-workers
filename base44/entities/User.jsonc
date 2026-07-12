@@ -4,10 +4,9 @@
   "properties": {
     "role": {
       "type": "string",
-      "description": "Rol del usuario en la plataforma",
+      "description": "Rol del usuario en la plataforma (super_admin para superadministradores, user para el resto)",
       "enum": [
         "super_admin",
-        "admin",
         "user"
       ],
       "default": "user"
@@ -28,5 +27,39 @@
   },
   "required": [
     "role"
-  ]
+  ],
+  "rls": {
+    "read": {
+      "$or": [
+        {
+          "data.id": "{{user.id}}"
+        },
+        {
+          "data.organization_id": "{{user.data.organization_id}}"
+        },
+        {
+          "user_condition": {
+            "role": "super_admin"
+          }
+        }
+      ]
+    },
+    "update": {
+      "$or": [
+        {
+          "data.id": "{{user.id}}"
+        },
+        {
+          "user_condition": {
+            "role": "super_admin"
+          }
+        }
+      ]
+    },
+    "delete": {
+      "user_condition": {
+        "role": "super_admin"
+      }
+    }
+  }
 }
